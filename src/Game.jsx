@@ -372,13 +372,14 @@ function GameScene({ controlsRef, aimRefs, setHud, onGameOver, isPaused, text })
         return;
       }
 
-      if (aimRefs.firingRef.current && weapon.cooldown <= 0) {
+      if ((aimRefs.firingRef.current || aimRefs.fireRequestRef.current) && weapon.cooldown <= 0) {
+        aimRefs.fireRequestRef.current = false;
         fireWeapon(elapsedTime);
         weapon.ammo -= 1;
         weapon.cooldown = WEAPON.FIRE_INTERVAL;
       }
     },
-    [aimRefs.firingRef, fireWeapon]
+    [aimRefs.fireRequestRef, aimRefs.firingRef, fireWeapon]
   );
 
   const updateDinosaurs = useCallback((deltaTime) => {
@@ -600,8 +601,9 @@ export default function Game({ locale, onGameOver, onRestart, onQuit }) {
   const [isPaused, setIsPaused] = useState(false);
   const aimRefs = useMemo(() => ({
     crosshairRef: pointerAim.crosshairRef,
-    firingRef: pointerAim.firingRef
-  }), [pointerAim.crosshairRef, pointerAim.firingRef]);
+    firingRef: pointerAim.firingRef,
+    fireRequestRef: pointerAim.fireRequestRef
+  }), [pointerAim.crosshairRef, pointerAim.fireRequestRef, pointerAim.firingRef]);
 
   const togglePause = useCallback(() => {
     setIsPaused((current) => !current);
@@ -624,7 +626,8 @@ export default function Game({ locale, onGameOver, onRestart, onQuit }) {
 
   useEffect(() => {
     if (isPaused) pointerAim.firingRef.current = false;
-  }, [isPaused, pointerAim.firingRef]);
+    if (isPaused) pointerAim.fireRequestRef.current = false;
+  }, [isPaused, pointerAim.fireRequestRef, pointerAim.firingRef]);
 
   return (
     <div className="game-shell" onContextMenu={(contextMenuEvent) => contextMenuEvent.preventDefault()}>
@@ -663,6 +666,7 @@ export default function Game({ locale, onGameOver, onRestart, onQuit }) {
         text={text}
         controlsRef={controlsRef}
         firingRef={pointerAim.firingRef}
+        fireRequestRef={pointerAim.fireRequestRef}
         moveCrosshairBy={pointerAim.moveCrosshairBy}
       />
     </div>

@@ -57,8 +57,7 @@ export const TRANSLATIONS = {
       damageHeadshot: '爆頭',
       mobileControls: '手機控制項',
       mobileMove: '移動',
-      mobileAim: '瞄準',
-      mobileFire: '射擊',
+      mobileAim: '瞄準 / 射擊',
       dinosaurHealth: '{name} 血量',
       dinosaurs: {
         raptor: '迅猛龍',
@@ -118,8 +117,7 @@ export const TRANSLATIONS = {
       damageHeadshot: 'HEADSHOT',
       mobileControls: 'Mobile controls',
       mobileMove: 'Move',
-      mobileAim: 'Aim',
-      mobileFire: 'Fire',
+      mobileAim: 'Aim / Fire',
       dinosaurHealth: '{name} health',
       dinosaurs: {
         raptor: 'Raptor',

@@ -15,6 +15,7 @@ export function usePointerAim() {
   const [crosshair, setCrosshair] = useState(getDefaultCrosshair);
   const crosshairRef = useRef(crosshair);
   const firingRef = useRef(false);
+  const fireRequestRef = useRef(false);
 
   const setCrosshairPosition = useCallback((screenX, screenY) => {
     const nextCrosshair = {
@@ -42,6 +43,7 @@ export function usePointerAim() {
 
   const handlePointerDown = useCallback((pointerEvent) => {
     if (pointerEvent.pointerType !== 'touch' && pointerEvent.button === 0) {
+      fireRequestRef.current = true;
       firingRef.current = true;
     }
   }, []);
@@ -75,6 +77,7 @@ export function usePointerAim() {
     crosshair,
     crosshairRef,
     firingRef,
+    fireRequestRef,
     moveCrosshairBy,
     handlePointerMove,
     handlePointerDown,
