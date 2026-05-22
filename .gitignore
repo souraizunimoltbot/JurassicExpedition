@@ -1,0 +1,11 @@
+node_modules
+dist
+.vite
+.DS_Store
+*.local
+*.log
+debug-screenshot.png
+chrome-debug-profile/
+.wrangler/
+.env
+.env.*
