@@ -27,7 +27,7 @@ Cloudflare Pages Git integration 設定：
 如果 Cloudflare 介面一定要填 deploy command，請改用 Pages 指令：
 
 ```bash
-npx wrangler pages deploy dist --project-name jurassic-expedition
+npx wrangler pages deploy dist --project-name jurassicexpedition
 ```
 
 也可以用 Wrangler 直接部署：
@@ -36,7 +36,7 @@ npx wrangler pages deploy dist --project-name jurassic-expedition
 npm run deploy:cloudflare
 ```
 
-專案包含 [wrangler.toml](wrangler.toml) 與 [public/_redirects](public/_redirects)，Cloudflare Pages 會在 build 後輸出靜態檔到 `dist`，並支援 SPA fallback。`wrangler.toml` 也包含 `[assets]` 設定，避免誤執行 `npx wrangler deploy` 時找不到 `dist` 資產目錄。
+專案包含 [wrangler.toml](wrangler.toml)，Cloudflare Pages 會在 build 後輸出靜態檔到 `dist`。SPA fallback 由 `wrangler.toml` 的 `[assets]` 與 `not_found_handling = "single-page-application"` 負責，避免 `_redirects` 在 `npx wrangler deploy` 流程中被判定為 infinite loop。
 
 ## 操作
 
