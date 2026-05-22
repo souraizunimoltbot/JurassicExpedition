@@ -22,6 +22,13 @@ Cloudflare Pages Git integration 設定：
 - Build command: `npm run build`
 - Build output directory: `dist`
 - Framework preset: `Vite`
+- Deploy command: 留空，不要使用 `npx wrangler deploy`
+
+如果 Cloudflare 介面一定要填 deploy command，請改用 Pages 指令：
+
+```bash
+npx wrangler pages deploy dist --project-name jurassic-expedition
+```
 
 也可以用 Wrangler 直接部署：
 
@@ -29,7 +36,7 @@ Cloudflare Pages Git integration 設定：
 npm run deploy:cloudflare
 ```
 
-專案包含 [wrangler.toml](wrangler.toml) 與 [public/_redirects](public/_redirects)，Cloudflare Pages 會在 build 後輸出靜態檔到 `dist`，並支援 SPA fallback。
+專案包含 [wrangler.toml](wrangler.toml) 與 [public/_redirects](public/_redirects)，Cloudflare Pages 會在 build 後輸出靜態檔到 `dist`，並支援 SPA fallback。`wrangler.toml` 也包含 `[assets]` 設定，避免誤執行 `npx wrangler deploy` 時找不到 `dist` 資產目錄。
 
 ## 操作
 
