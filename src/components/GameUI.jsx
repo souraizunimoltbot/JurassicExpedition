@@ -69,12 +69,6 @@ export default function GameUI({ hud, crosshair, isPaused, onPause, onResume, on
         <span />
       </div>
 
-      {hud.threatLevel !== 'CLEAR' && (
-        <div className={`threat-indicator threat-indicator--${hud.threatLevel.toLowerCase()}`} style={{ '--bearing': `${hud.threatBearing}deg` }}>
-          <span />
-        </div>
-      )}
-
       {lowHealth && <div className="low-health-vignette" />}
 
       <div className="hud-panel hud-panel--map">

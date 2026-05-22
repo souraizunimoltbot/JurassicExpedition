@@ -47,9 +47,6 @@ function createInitialHud() {
     aimZone: 'none',
     hitMarker: false,
     hitMarkerZone: 'none',
-    threatLevel: 'CLEAR',
-    nearestThreatDistance: null,
-    threatBearing: 0,
     player: { x: 0, z: 0, heading: 0 },
     dinosaurs: []
   };
@@ -460,39 +457,6 @@ function GameScene({ controlsRef, aimRefs, setHud, onGameOver, isPaused, text })
     if (director.comboTimer === 0) director.combo = 0;
   }, []);
 
-  const getThreatSnapshot = useCallback(() => {
-    const playerPosition = vehicleStateRef.current.position;
-    const playerHeading = vehicleStateRef.current.heading;
-    let nearestThreat = null;
-
-    for (const entity of dinosaursRef.current) {
-      if (entity.isDying || entity.health <= 0) continue;
-      const distance = entity.position.distanceTo(playerPosition);
-      if (!nearestThreat || distance < nearestThreat.distance) {
-        nearestThreat = { entity, distance };
-      }
-    }
-
-    if (!nearestThreat) {
-      return { threatLevel: 'CLEAR', nearestThreatDistance: null, threatBearing: 0 };
-    }
-
-    const relativeX = nearestThreat.entity.position.x - playerPosition.x;
-    const relativeZ = nearestThreat.entity.position.z - playerPosition.z;
-    const rotationCos = Math.cos(-playerHeading);
-    const rotationSin = Math.sin(-playerHeading);
-    const rotatedX = relativeX * rotationCos - relativeZ * rotationSin;
-    const rotatedZ = relativeX * rotationSin + relativeZ * rotationCos;
-    const threatBearing = Math.atan2(rotatedX, -rotatedZ) * THREE.MathUtils.RAD2DEG;
-    const threatLevel = nearestThreat.distance <= GAME.CLOSE_THREAT_DISTANCE ? 'DANGER' : nearestThreat.distance <= 72 ? 'HUNTED' : 'CLEAR';
-
-    return {
-      threatLevel,
-      nearestThreatDistance: nearestThreat.distance,
-      threatBearing
-    };
-  }, []);
-
   const publishSnapshots = useCallback((deltaTime, elapsedTime) => {
     snapshotTimerRef.current += deltaTime;
     const activeEffects = effectsRef.current.filter((effect) => elapsedTime - effect.createdAt < effect.duration + 0.18);
@@ -507,7 +471,6 @@ function GameScene({ controlsRef, aimRefs, setHud, onGameOver, isPaused, text })
     const vehicle = vehicleStateRef.current;
     const weapon = weaponRef.current;
     const director = directorRef.current;
-    const threat = getThreatSnapshot();
     const remainingTime = Math.max(0, GAME.EXPEDITION_DURATION - director.elapsedTime);
     setHud({
       score: scoreRef.current.score,
@@ -524,13 +487,12 @@ function GameScene({ controlsRef, aimRefs, setHud, onGameOver, isPaused, text })
       aimZone: director.aimZone,
       hitMarker: director.hitMarkerTime > 0,
       hitMarkerZone: director.hitMarkerZone,
-      ...threat,
       player: { x: vehicle.position.x, z: vehicle.position.z, heading: vehicle.heading },
       dinosaurs: dinosaursRef.current
         .filter((entity) => !entity.isDying)
         .map((entity) => ({ id: entity.id, type: entity.type, ...makePlainVector(entity.position), heading: entity.heading }))
     });
-  }, [getThreatSnapshot, setHud]);
+  }, [setHud]);
 
   useFrame(({ clock }, deltaTime) => {
     if (gameOverRef.current) return;
