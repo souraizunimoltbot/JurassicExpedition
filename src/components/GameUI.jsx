@@ -7,7 +7,7 @@ function formatTime(totalSeconds) {
   return `${minutes}:${seconds}`;
 }
 
-function Minimap({ player, dinosaurs }) {
+function Minimap({ player, dinosaurs, text }) {
   const range = WORLD.MINIMAP_RANGE;
   const rotationCos = Math.cos(-player.heading);
   const rotationSin = Math.sin(-player.heading);
@@ -29,7 +29,7 @@ function Minimap({ player, dinosaurs }) {
     .filter((dinosaur) => dinosaur.distance <= range);
 
   return (
-    <div className="minimap" aria-label="小地圖">
+    <div className="minimap" aria-label={text.minimap}>
       <div className="minimap-ring" />
       <div className="minimap-player" />
       {visibleDinosaurs.map((dinosaur) => (
@@ -37,17 +37,17 @@ function Minimap({ player, dinosaurs }) {
           key={dinosaur.id}
           className={`minimap-dot minimap-dot--${dinosaur.type}`}
           style={{ left: `${dinosaur.left}%`, top: `${dinosaur.top}%` }}
-          title={DINO_TYPES[dinosaur.type].label}
+          title={text.dinosaurs[dinosaur.type] ?? DINO_TYPES[dinosaur.type].label}
         />
       ))}
     </div>
   );
 }
 
-export default function GameUI({ hud, crosshair, isPaused, onPause, onResume, onRestart, onQuit }) {
+export default function GameUI({ hud, crosshair, isPaused, onPause, onResume, onRestart, onQuit, text }) {
   const healthRatio = Math.max(0, hud.health / PLAYER.MAX_HEALTH);
   const reloadRatio = hud.reloadTime > 0 ? 1 - hud.reloadTime / WEAPON.RELOAD_TIME : 1;
-  const ammoLabel = hud.reloadTime > 0 ? 'RELOAD' : `${hud.ammo}/${WEAPON.MAGAZINE_SIZE}`;
+  const ammoLabel = hud.reloadTime > 0 ? text.reload.toUpperCase() : `${hud.ammo}/${WEAPON.MAGAZINE_SIZE}`;
   const crosshairClasses = [
     'crosshair',
     hud.aimZone === 'head' ? 'crosshair--head' : '',
@@ -63,7 +63,7 @@ export default function GameUI({ hud, crosshair, isPaused, onPause, onResume, on
       <div
         className={crosshairClasses}
         style={{ left: `${crosshair.screenX}px`, top: `${crosshair.screenY}px` }}
-        aria-label="準星"
+        aria-label={text.crosshair}
       >
         <span />
         <span />
@@ -78,46 +78,46 @@ export default function GameUI({ hud, crosshair, isPaused, onPause, onResume, on
       {lowHealth && <div className="low-health-vignette" />}
 
       <div className="hud-panel hud-panel--map">
-        <Minimap player={hud.player} dinosaurs={hud.dinosaurs} />
+        <Minimap player={hud.player} dinosaurs={hud.dinosaurs} text={text} />
       </div>
 
       <div className="hud-panel hud-panel--objective">
         <div className="objective-row">
-          <span>遠征進度</span>
+          <span>{text.expeditionProgress}</span>
           <strong>{formatTime(hud.remainingTime)}</strong>
         </div>
         <div className="objective-bar">
           <div style={{ width: `${hud.progress * 100}%` }} />
         </div>
         <div className="objective-meta">
-          <span>WAVE {hud.wave}</span>
-          <span>ALIVE {hud.aliveCount}</span>
+          <span>{text.wave.toUpperCase()} {hud.wave}</span>
+          <span>{text.alive.toUpperCase()} {hud.aliveCount}</span>
         </div>
       </div>
 
       <div className="hud-panel hud-panel--score">
         <div>
-          <span>分數</span>
+          <span>{text.score}</span>
           <strong>{hud.score}</strong>
         </div>
         <div>
-          <span>擊殺</span>
+          <span>{text.kills}</span>
           <strong>{hud.kills}</strong>
         </div>
         {hud.combo > 1 && (
           <div className="combo-cell">
-            <span>連殺</span>
+            <span>{text.combo}</span>
             <strong>x{hud.combo}</strong>
           </div>
         )}
       </div>
 
-      <button className="pause-button" type="button" onClick={onPause} aria-label="暫停">
+      <button className="pause-button" type="button" onClick={onPause} aria-label={text.pause}>
         II
       </button>
 
       <div className="health-panel">
-        <span>HP</span>
+        <span>{text.health}</span>
         <div className={lowHealth ? 'health-bar health-bar--low' : 'health-bar'}>
           <div style={{ width: `${healthRatio * 100}%` }} />
         </div>
@@ -125,7 +125,7 @@ export default function GameUI({ hud, crosshair, isPaused, onPause, onResume, on
       </div>
 
       <div className={hud.reloadTime > 0 ? 'ammo-panel ammo-panel--reload' : 'ammo-panel'}>
-        <span>AMMO</span>
+        <span>{text.ammo}</span>
         <strong>{ammoLabel}</strong>
         {hud.reloadTime > 0 && (
           <div className="reload-bar">
@@ -137,26 +137,26 @@ export default function GameUI({ hud, crosshair, isPaused, onPause, onResume, on
       {isPaused && (
         <div className="pause-overlay">
           <div className="pause-panel">
-            <span className="pause-kicker">Expedition Paused</span>
-            <h2>遠征暫停</h2>
+            <span className="pause-kicker">{text.pausedKicker}</span>
+            <h2>{text.pausedTitle}</h2>
             <div className="pause-stats">
               <div>
-                <span>分數</span>
+                <span>{text.score}</span>
                 <strong>{hud.score}</strong>
               </div>
               <div>
-                <span>波次</span>
+                <span>{text.wave}</span>
                 <strong>{hud.wave}</strong>
               </div>
               <div>
-                <span>剩餘</span>
+                <span>{text.remaining}</span>
                 <strong>{formatTime(hud.remainingTime)}</strong>
               </div>
             </div>
             <div className="pause-actions">
-              <button className="primary-action" type="button" onClick={onResume}>繼續</button>
-              <button className="secondary-action" type="button" onClick={onRestart}>重新開始</button>
-              <button className="secondary-action" type="button" onClick={onQuit}>返回標題</button>
+              <button className="primary-action" type="button" onClick={onResume}>{text.resume}</button>
+              <button className="secondary-action" type="button" onClick={onRestart}>{text.restart}</button>
+              <button className="secondary-action" type="button" onClick={onQuit}>{text.backToTitle}</button>
             </div>
           </div>
         </div>

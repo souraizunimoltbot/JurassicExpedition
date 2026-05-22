@@ -9,6 +9,7 @@ import GameUI from './components/GameUI.jsx';
 import PlayerTruck from './components/PlayerTruck.jsx';
 import { useKeyboardControls } from './hooks/useKeyboardControls.js';
 import { usePointerAim } from './hooks/usePointerAim.js';
+import { getTranslation } from './i18n.js';
 import {
   chooseWeighted,
   clamp,
@@ -98,7 +99,7 @@ function makeImpactParticles(random) {
   }));
 }
 
-function GameScene({ controlsRef, aimRefs, setHud, onGameOver, isPaused }) {
+function GameScene({ controlsRef, aimRefs, setHud, onGameOver, isPaused, text }) {
   const { camera, size } = useThree();
   const randomRef = useRef(createSeededRandom(9132026));
   const vehicleStateRef = useRef({
@@ -329,7 +330,7 @@ function GameScene({ controlsRef, aimRefs, setHud, onGameOver, isPaused }) {
       addEffect({
         type: 'damage',
         position: getDinosaurHitCenter(hit.entity, archetype, isHeadshot ? archetype.headHitbox : archetype.bodyHitbox),
-        text: isHeadshot ? `HEADSHOT -${damage}` : `-${damage}`,
+        text: isHeadshot ? `${text.damageHeadshot.toUpperCase()} -${damage}` : `-${damage}`,
         headshot: isHeadshot,
         createdAt: elapsedTime,
         duration: WEAPON.DAMAGE_TEXT_DURATION
@@ -354,7 +355,7 @@ function GameScene({ controlsRef, aimRefs, setHud, onGameOver, isPaused }) {
         });
       }
     },
-    [addEffect, findShotHit]
+    [addEffect, findShotHit, text.damageHeadshot]
   );
 
   const updateWeapon = useCallback(
@@ -593,7 +594,7 @@ function GameScene({ controlsRef, aimRefs, setHud, onGameOver, isPaused }) {
       <Environment />
       <PlayerTruck ref={truckApiRef} vehicleStateRef={vehicleStateRef} turretYawRef={turretYawRef} turretPitchRef={turretPitchRef} recoilRef={recoilRef} />
       {dinosaurs.map((entity) => (
-        <Dinosaur key={entity.id} entity={entity} />
+        <Dinosaur key={entity.id} entity={entity} text={text} />
       ))}
       <Effects effects={effects} />
     </>
@@ -620,7 +621,7 @@ class SceneErrorBoundary extends Component {
     if (this.state.error) {
       return (
         <div className="scene-error">
-          <strong>Scene failed to render</strong>
+          <strong>{this.props.text.sceneFailed}</strong>
           <span>{this.state.error.message}</span>
         </div>
       );
@@ -629,7 +630,8 @@ class SceneErrorBoundary extends Component {
   }
 }
 
-export default function Game({ onGameOver, onRestart, onQuit }) {
+export default function Game({ locale, onGameOver, onRestart, onQuit }) {
+  const text = getTranslation(locale).game;
   const controlsRef = useKeyboardControls();
   const pointerAim = usePointerAim();
   const [hud, setHud] = useState(createInitialHud);
@@ -664,13 +666,13 @@ export default function Game({ onGameOver, onRestart, onQuit }) {
 
   return (
     <div className="game-shell" onContextMenu={(contextMenuEvent) => contextMenuEvent.preventDefault()}>
-      <SceneErrorBoundary>
+      <SceneErrorBoundary text={text}>
         <Canvas
           shadows="soft"
           dpr={[1, 1.5]}
           camera={{ position: [0, 6.4, -11.2], fov: 58, near: 0.1, far: 420 }}
           gl={{ antialias: true, alpha: false, powerPreference: 'high-performance', stencil: false }}
-          fallback={<div className="scene-error">WebGL 初始化失敗</div>}
+          fallback={<div className="scene-error">{text.webglFailed}</div>}
           onCreated={({ gl }) => gl.setClearColor('#9fc4e5')}
           onPointerMove={pointerAim.handlePointerMove}
           onPointerDown={(pointerEvent) => {
@@ -684,6 +686,7 @@ export default function Game({ onGameOver, onRestart, onQuit }) {
             setHud={setHud}
             onGameOver={onGameOver}
             isPaused={isPaused}
+            text={text}
           />
         </Canvas>
       </SceneErrorBoundary>
@@ -695,6 +698,7 @@ export default function Game({ onGameOver, onRestart, onQuit }) {
         onResume={resumeGame}
         onRestart={onRestart}
         onQuit={onQuit}
+        text={text}
       />
     </div>
   );

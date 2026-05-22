@@ -135,7 +135,7 @@ function DinosaurModel({ entity, archetype, flash }) {
   return <RaptorModel archetype={archetype} flash={flash} />;
 }
 
-export default function Dinosaur({ entity }) {
+export default function Dinosaur({ entity, text }) {
   const groupRef = useRef();
   const archetype = DINO_TYPES[entity.type];
   const flash = entity.flashTime > 0;
@@ -159,7 +159,7 @@ export default function Dinosaur({ entity }) {
       <DinosaurModel entity={entity} archetype={archetype} flash={flash} />
       {showHealth && (
         <Html position={[0, archetype.healthBarHeight, 0]} center distanceFactor={12} occlude={false}>
-          <div className="dino-health" aria-label={`${archetype.label} health`}>
+          <div className="dino-health" aria-label={text.dinosaurHealth.replace('{name}', text.dinosaurs[entity.type] ?? archetype.label)}>
             <div style={{ width: `${healthRatio * 100}%` }} />
           </div>
         </Html>
