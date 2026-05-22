@@ -55,6 +55,10 @@ export const TRANSLATIONS = {
       sceneFailed: '場景渲染失敗',
       webglFailed: 'WebGL 初始化失敗',
       damageHeadshot: '爆頭',
+      mobileControls: '手機控制項',
+      mobileMove: '移動',
+      mobileAim: '瞄準',
+      mobileFire: '射擊',
       dinosaurHealth: '{name} 血量',
       dinosaurs: {
         raptor: '迅猛龍',
@@ -112,6 +116,10 @@ export const TRANSLATIONS = {
       sceneFailed: 'Scene failed to render',
       webglFailed: 'WebGL failed to initialize',
       damageHeadshot: 'HEADSHOT',
+      mobileControls: 'Mobile controls',
+      mobileMove: 'Move',
+      mobileAim: 'Aim',
+      mobileFire: 'Fire',
       dinosaurHealth: '{name} health',
       dinosaurs: {
         raptor: 'Raptor',

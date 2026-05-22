@@ -1,4 +1,21 @@
+import { useEffect, useRef, useState } from 'react';
 import { DINO_TYPES, GAME, PLAYER, WEAPON, WORLD } from '../constants/gameConstants.js';
+
+const JOYSTICK_RADIUS = 54;
+const JOYSTICK_DEAD_ZONE = 0.18;
+const AIM_SENSITIVITY = 1.15;
+
+function clampValue(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function resetVehicleControls(controlsRef) {
+  const controls = controlsRef.current;
+  controls.forward = false;
+  controls.backward = false;
+  controls.left = false;
+  controls.right = false;
+}
 
 function formatTime(totalSeconds) {
   const safeSeconds = Math.max(0, Math.floor(totalSeconds));
@@ -44,7 +61,177 @@ function Minimap({ player, dinosaurs, text }) {
   );
 }
 
-export default function GameUI({ hud, crosshair, isPaused, onPause, onResume, onRestart, onQuit, text }) {
+function MobileControls({ controlsRef, firingRef, moveCrosshairBy, isPaused, text }) {
+  const stickPointerRef = useRef(null);
+  const stickBoundsRef = useRef(null);
+  const aimPointerRef = useRef(null);
+  const aimLastRef = useRef({ x: 0, y: 0 });
+  const firePointerRef = useRef(null);
+  const [stick, setStick] = useState({ x: 0, y: 0, active: false });
+  const [aimActive, setAimActive] = useState(false);
+  const [fireActive, setFireActive] = useState(false);
+
+  const resetAll = () => {
+    stickPointerRef.current = null;
+    aimPointerRef.current = null;
+    firePointerRef.current = null;
+    stickBoundsRef.current = null;
+    firingRef.current = false;
+    resetVehicleControls(controlsRef);
+    setStick({ x: 0, y: 0, active: false });
+    setAimActive(false);
+    setFireActive(false);
+  };
+
+  const updateStick = (pointerEvent) => {
+    const bounds = stickBoundsRef.current ?? pointerEvent.currentTarget.getBoundingClientRect();
+    stickBoundsRef.current = bounds;
+    const rawX = pointerEvent.clientX - (bounds.left + bounds.width * 0.5);
+    const rawY = pointerEvent.clientY - (bounds.top + bounds.height * 0.5);
+    const distance = Math.hypot(rawX, rawY);
+    const scale = distance > JOYSTICK_RADIUS ? JOYSTICK_RADIUS / distance : 1;
+    const x = rawX * scale;
+    const y = rawY * scale;
+    const normalizedX = x / JOYSTICK_RADIUS;
+    const normalizedY = y / JOYSTICK_RADIUS;
+    const controls = controlsRef.current;
+    controls.forward = normalizedY < -JOYSTICK_DEAD_ZONE;
+    controls.backward = normalizedY > JOYSTICK_DEAD_ZONE;
+    controls.left = normalizedX < -JOYSTICK_DEAD_ZONE;
+    controls.right = normalizedX > JOYSTICK_DEAD_ZONE;
+    setStick({ x, y, active: true });
+  };
+
+  const handleStickDown = (pointerEvent) => {
+    if (isPaused) return;
+    pointerEvent.preventDefault();
+    pointerEvent.stopPropagation();
+    stickPointerRef.current = pointerEvent.pointerId;
+    stickBoundsRef.current = pointerEvent.currentTarget.getBoundingClientRect();
+    pointerEvent.currentTarget.setPointerCapture(pointerEvent.pointerId);
+    updateStick(pointerEvent);
+  };
+
+  const handleStickMove = (pointerEvent) => {
+    if (stickPointerRef.current !== pointerEvent.pointerId) return;
+    pointerEvent.preventDefault();
+    updateStick(pointerEvent);
+  };
+
+  const handleStickUp = (pointerEvent) => {
+    if (stickPointerRef.current !== pointerEvent.pointerId) return;
+    pointerEvent.preventDefault();
+    if (pointerEvent.currentTarget.hasPointerCapture(pointerEvent.pointerId)) {
+      pointerEvent.currentTarget.releasePointerCapture(pointerEvent.pointerId);
+    }
+    stickPointerRef.current = null;
+    stickBoundsRef.current = null;
+    resetVehicleControls(controlsRef);
+    setStick({ x: 0, y: 0, active: false });
+  };
+
+  const handleAimDown = (pointerEvent) => {
+    if (isPaused) return;
+    pointerEvent.preventDefault();
+    pointerEvent.stopPropagation();
+    aimPointerRef.current = pointerEvent.pointerId;
+    aimLastRef.current = { x: pointerEvent.clientX, y: pointerEvent.clientY };
+    pointerEvent.currentTarget.setPointerCapture(pointerEvent.pointerId);
+    setAimActive(true);
+  };
+
+  const handleAimMove = (pointerEvent) => {
+    if (aimPointerRef.current !== pointerEvent.pointerId) return;
+    pointerEvent.preventDefault();
+    const lastAim = aimLastRef.current;
+    moveCrosshairBy((pointerEvent.clientX - lastAim.x) * AIM_SENSITIVITY, (pointerEvent.clientY - lastAim.y) * AIM_SENSITIVITY);
+    aimLastRef.current = { x: pointerEvent.clientX, y: pointerEvent.clientY };
+  };
+
+  const handleAimUp = (pointerEvent) => {
+    if (aimPointerRef.current !== pointerEvent.pointerId) return;
+    pointerEvent.preventDefault();
+    if (pointerEvent.currentTarget.hasPointerCapture(pointerEvent.pointerId)) {
+      pointerEvent.currentTarget.releasePointerCapture(pointerEvent.pointerId);
+    }
+    aimPointerRef.current = null;
+    setAimActive(false);
+  };
+
+  const handleFireDown = (pointerEvent) => {
+    if (isPaused) return;
+    pointerEvent.preventDefault();
+    pointerEvent.stopPropagation();
+    firePointerRef.current = pointerEvent.pointerId;
+    pointerEvent.currentTarget.setPointerCapture(pointerEvent.pointerId);
+    firingRef.current = true;
+    setFireActive(true);
+  };
+
+  const handleFireUp = (pointerEvent) => {
+    if (firePointerRef.current !== pointerEvent.pointerId) return;
+    pointerEvent.preventDefault();
+    if (pointerEvent.currentTarget.hasPointerCapture(pointerEvent.pointerId)) {
+      pointerEvent.currentTarget.releasePointerCapture(pointerEvent.pointerId);
+    }
+    firePointerRef.current = null;
+    firingRef.current = false;
+    setFireActive(false);
+  };
+
+  useEffect(() => {
+    if (isPaused) resetAll();
+  }, [isPaused]);
+
+  useEffect(() => {
+    window.addEventListener('blur', resetAll);
+    return () => {
+      window.removeEventListener('blur', resetAll);
+      firingRef.current = false;
+      resetVehicleControls(controlsRef);
+    };
+  }, []);
+
+  return (
+    <div className="mobile-controls" aria-label={text.mobileControls}>
+      <div
+        className={stick.active ? 'mobile-stick mobile-stick--active' : 'mobile-stick'}
+        role="application"
+        aria-label={text.mobileMove}
+        onPointerDown={handleStickDown}
+        onPointerMove={handleStickMove}
+        onPointerUp={handleStickUp}
+        onPointerCancel={handleStickUp}
+      >
+        <div className="mobile-stick__base" />
+        <div className="mobile-stick__knob" style={{ transform: `translate(${clampValue(stick.x, -JOYSTICK_RADIUS, JOYSTICK_RADIUS)}px, ${clampValue(stick.y, -JOYSTICK_RADIUS, JOYSTICK_RADIUS)}px)` }} />
+      </div>
+      <div
+        className={aimActive ? 'mobile-aim-pad mobile-aim-pad--active' : 'mobile-aim-pad'}
+        role="application"
+        aria-label={text.mobileAim}
+        onPointerDown={handleAimDown}
+        onPointerMove={handleAimMove}
+        onPointerUp={handleAimUp}
+        onPointerCancel={handleAimUp}
+      >
+        <span>{text.mobileAim}</span>
+      </div>
+      <button
+        className={fireActive ? 'mobile-fire-button mobile-fire-button--active' : 'mobile-fire-button'}
+        type="button"
+        aria-label={text.mobileFire}
+        onPointerDown={handleFireDown}
+        onPointerUp={handleFireUp}
+        onPointerCancel={handleFireUp}
+      >
+        {text.mobileFire}
+      </button>
+    </div>
+  );
+}
+
+export default function GameUI({ hud, crosshair, isPaused, onPause, onResume, onRestart, onQuit, text, controlsRef, firingRef, moveCrosshairBy }) {
   const healthRatio = Math.max(0, hud.health / PLAYER.MAX_HEALTH);
   const reloadRatio = hud.reloadTime > 0 ? 1 - hud.reloadTime / WEAPON.RELOAD_TIME : 1;
   const ammoLabel = hud.reloadTime > 0 ? text.reload.toUpperCase() : `${hud.ammo}/${WEAPON.MAGAZINE_SIZE}`;
@@ -127,6 +314,8 @@ export default function GameUI({ hud, crosshair, isPaused, onPause, onResume, on
           </div>
         )}
       </div>
+
+      <MobileControls controlsRef={controlsRef} firingRef={firingRef} moveCrosshairBy={moveCrosshairBy} isPaused={isPaused} text={text} />
 
       {isPaused && (
         <div className="pause-overlay">

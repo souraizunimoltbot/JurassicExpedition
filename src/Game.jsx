@@ -661,6 +661,9 @@ export default function Game({ locale, onGameOver, onRestart, onQuit }) {
         onRestart={onRestart}
         onQuit={onQuit}
         text={text}
+        controlsRef={controlsRef}
+        firingRef={pointerAim.firingRef}
+        moveCrosshairBy={pointerAim.moveCrosshairBy}
       />
     </div>
   );

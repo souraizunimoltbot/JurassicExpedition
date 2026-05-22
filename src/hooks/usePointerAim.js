@@ -32,8 +32,16 @@ export function usePointerAim() {
     [setCrosshairPosition]
   );
 
+  const moveCrosshairBy = useCallback(
+    (deltaX, deltaY) => {
+      const currentCrosshair = crosshairRef.current;
+      setCrosshairPosition(currentCrosshair.screenX + deltaX, currentCrosshair.screenY + deltaY);
+    },
+    [setCrosshairPosition]
+  );
+
   const handlePointerDown = useCallback((pointerEvent) => {
-    if (pointerEvent.button === 0) {
+    if (pointerEvent.pointerType !== 'touch' && pointerEvent.button === 0) {
       firingRef.current = true;
     }
   }, []);
@@ -67,6 +75,7 @@ export function usePointerAim() {
     crosshair,
     crosshairRef,
     firingRef,
+    moveCrosshairBy,
     handlePointerMove,
     handlePointerDown,
     handlePointerUp
